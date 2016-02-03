@@ -1,0 +1,36 @@
+---
+title: "607_Week2Assignment"
+author: "Chirag Vithalani"
+date: "January 30, 2016"
+output: html_document
+---
+
+**607_Week2Assignment**
+
+Your task is to choose one dataset, then study the data and its associated description of the data (i.e. "data dictionary"). You should take the data, and create an R data frame with a subset of the columns (and if you like rows) in the dataset.Your deliverable is the R code to perform these transformation tasks.
+
+**Reading bridge data** 
+
+```{r}
+bridgev1file<-read.csv("https://archive.ics.uci.edu/ml/machine-learning-databases/bridges/bridges.data.version2", header= FALSE, sep=",",na.strings = "?")
+head (bridgev1file)
+```
+**Read data dictionary** (simplied)
+
+```{r}
+bridge_dictionay <- read.table("./data_dictionary.txt",row.names = 1, sep=":")
+print(bridge_dictionay)
+
+```
+**Apply headers to data by reading from data_distionary**
+```{r}
+names(bridgev1file) <- row.names(bridge_dictionay)
+head(bridgev1file)
+```
+**I expected all 'HIGHWAYS' with 'LONG' length are made up of 'IRON' or 'STEEL',but there are few HIGHWAYS made up of 'WOOD'**
+
+```{r}
+
+bridge_sub_df <- subset(bridgev1file, select=c(5,6,7,10))
+print(bridge_sub_df)
+```
