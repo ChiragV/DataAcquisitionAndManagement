@@ -1,0 +1,63 @@
+---
+title: "607_Assignment2"
+author: "Chirag Vithalani"
+date: "February 13, 2016"
+output: html_document
+---
+
+###Your task is to create an R dataframe that shows rates of tuberculosis infection by country. You should use the information from the tb database and the attached population.csv file. Your R dataframe should have the following columns:Country, Year, Rate. Where Rate is defined as Cases/Population.
+
+####Step 1: So we need Country,Year and Rate. Getting first two column is easy,so let us do that first.
+
+```{r}
+population<-read.csv("https://raw.githubusercontent.com/chirag-vithlani/607/master/week3/population.csv", sep=",")
+head(population)
+```
+
+So we have first two columns.
+to calculate rate, we need cases.
+
+####Step 2: We need to get cases from database.
+Use below query to get data to R, once data is uploaded to database using SQL.
+
+SELECT YEAR,COUNTRY,SUM(MALECASES)
+FROM 
+(
+  
+  SELECT  TB1.*,TB1.CHILD+TB1.ADULT+TB1.ELDERLY AS maleCases  
+  FROM TB TB1 WHERE TB1.SEX='MALE' 
+  
+  UNION 
+  
+  SELECT  TB2.*,TB2.CHILD+TB2.ADULT+TB2.ELDERLY AS femaleCases 
+  FROM TB TB2 
+  WHERE TB2.SEX='FEMALE' 
+  
+) MASTER
+GROUP BY YEAR,COUNTRY
+
+```{r, echo=FALSE}
+
+library(RMySQL)
+mydb = dbConnect(MySQL(), user='root', password='Master31', dbname='tb', host='localhost')
+
+```
+
+```{r}
+rs = dbSendQuery(mydb, "select year,country,sum(malecases) as total  from  (select  tb1.*,tb1.child+tb1.adult+tb1.elderly as malecases  from tb tb1 where tb1.sex='male' union select tb2.*,tb2.child+tb2.adult+tb2.elderly as femalecases from tb tb2 where tb2.sex='female' ) master group by year,country")
+
+data = fetch(rs, n=-1)
+subset(data,data$country=='Afghanistan')
+```
+
+####Step 3 :Now join two frames with joining key being Year and Country.
+
+```{r}
+library(dplyr)
+fullData=inner_join(data,population)
+fullData$rate=fullData$total/fullData$population
+finalFrame=subset(fullData,select=c(1,2,5))
+head(finalFrame)
+```
+
+
