@@ -39,7 +39,7 @@ GROUP BY YEAR,COUNTRY
 ```{r, echo=FALSE}
 
 library(RMySQL)
-mydb = dbConnect(MySQL(), user='root', password='Master31', dbname='tb', host='localhost')
+mydb = dbConnect(MySQL(), user='root', password='password', dbname='tb', host='localhost')
 
 ```
 
