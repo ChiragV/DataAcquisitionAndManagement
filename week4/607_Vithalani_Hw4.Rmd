@@ -1,0 +1,166 @@
+---
+title: "607 Week 4 Assignment"
+author: "Chirag Vithalani"
+date: "February 16, 2016"
+output: html_document
+css: ./lab.css
+---
+
+
+
+<hr />
+
+<ul class="a">
+<li >
+3. Copy the introductory example. The vector name stores the extracted names.
+<pre>
+R> name
+[1] "Moe Szyslak" "Burns, C. Montgomery" "Rev. Timothy Lovejoy"
+[4] "Ned Flanders" "Simpson, Homer" "Dr. Julius Hibbert"
+</pre>
+
+
+
+
+<ul class="b">
+<li >
+(a)  Use the tools of this chapter to rearrange the vector so that all elements conform to the standard first_name last_name.
+
+
+Below is what we have
+
+```{r}
+library(stringr)
+raw.data <- "555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555
+-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert"
+
+name <- unlist(str_extract_all(raw.data, "[[:alpha:]., ]{2,}"))
+name
+```
+<ul class="c">
+<li>
+
+To get standard names below are steps
+
+<ol>
+<li>we need to convert list to dataframe</li>
+<li>rename it</li>
+
+
+```{r}
+#convert list to dataframe
+namesdf<-do.call(rbind, lapply(name, data.frame, stringsAsFactors=FALSE))
+#rename column
+namesdf$names<-namesdf$X..i..
+```
+<li>If name contains comma, that means last name is first and first name is last.so re-arrange it</li>
+
+
+```{r}
+namesdf$stdFormatNames<-ifelse(grepl( ",",namesdf$names),paste(word(namesdf$names,-1),word(namesdf$names,1)),namesdf$names)
+```
+
+<li>remove prefixes and commas</li>
+  
+```{r}
+namesdf$stdFormatNames<-gsub("Rev.|Dr.|,","", namesdf$stdFormatNames)
+namesdf$stdFormatNames
+```
+</ol>
+</li>
+</ul>
+
+</li>
+</ul>
+
+<ul class="b">
+<li>
+
+(b) Construct a logical vector indicating whether a character has a title (i.e., Rev. and Dr.).
+</li>
+</ul>
+
+<ul class="c">
+<li>
+Using str_detect to check if there is title in name
+
+```{r}
+namesdf$names
+
+namesdf$hasTitle<-str_detect(namesdf$names, "Rev.|Dr.")
+namesdf$names
+namesdf[,c("names","hasTitle")]
+```
+</li>
+</ul>
+
+<ul class="b">
+<li>
+(C) Construct a logical vector indicating whether a character has a second name.
+</li>
+</ul>
+
+<ul class="c">
+<li>
+
+Spliting by space
+
+```{r}
+namesdf$stdFormatNames
+grepl( " ",str_trim(namesdf$stdFormatNames))
+```
+
+</li>
+</ul>
+</li>
+</ul>
+
+<ul class="a">
+<li>
+7. Consider the string <title>+++BREAKING NEWS+++</title>. We would like to extract the first HTML tag. To do so we write the regular expression <.+>. Explain why this fails and correct the expression.
+
+
+<ul class="c">
+<li>
+R applies greedy quantification. This means that the program tries to extract the greatest Greedy quantification and how to avoid it possible sequence of the preceding character. As the . matches any character, the function returns the greatest possible sequence of any characters before a sequence of sentence. 
+
+
+```{r}
+
+stringToSearch<-"<title>+++BREAKING NEWS+++</title>"
+str_extract(stringToSearch,"<.+>")
+
+```
+
+We can change this behavior by adding a ? to the expression in order to signal that we are only looking for the shortest possible sequence of any characters before a sequence of sentence.
+
+
+```{r}
+str_extract(stringToSearch, "<.+?>")
+```
+</li>
+</ul>
+
+</li>
+</ul>
+
+<ul class="a">
+<li>
+8. Consider the string (5-3)^2=5^2-2*5*3+3^2 conforms to the binomial theorem. We would like to extract the formula in the string. To do so we write the regular expression [^0-9=+*()]+. Explain why this fails and correct the expression.
+
+<ul class="c">
+<li>
+Putting the caret at the beginning of a character class does the inverse.
+keeping it at the end resolves the problem.
+
+```{r}
+binomial_str <- "(5-3)^2=5^2-2*5*3+3^2 conforms to the binomial theorem."
+str_extract(binomial_str, "[^0-9=+*()]+")
+str_extract(binomial_str, "[0-9=+*()^-]+")
+
+```
+</li>
+</ul>
+
+</li>
+</ul>

@@ -1,0 +1,23 @@
+hr {
+    border: 2px solid #357FAA;
+}
+
+ul.a {
+    list-style-type: disc;
+	font-size : 25px;
+	color : #6666ff;
+}
+
+
+
+ul.b {
+    list-style-type: light-blue;
+	font-size : 20px;
+	color :#6666ff;
+}
+
+ul.c {
+    list-style-type: square;
+	color : green;
+	font-size : 15px;
+}
