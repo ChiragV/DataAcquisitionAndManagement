@@ -91,8 +91,20 @@ opp_rating_matrix <- matrix(opp_player_pre_rating, nrow=7, ncol=64)
 #Form column sums 
 opp_rating_avg <- colMeans(opp_rating_matrix, na.rm=TRUE)
 
+
+```
+</li>
+</ul>
+
+<ul class="a">
+<li >
+
+Write to output file
+
+```{r}
 # Data Frame
-data.frame(PlayerNames, stateData, points, Pre_performanceRating, opp_rating_avg)
+output<-data.frame(PlayerNames, stateData, points, Pre_performanceRating, opp_rating_avg)
+write.csv(output, file = "./PlayerData.csv",row.names=FALSE)
 ```
 </li>
 </ul>
