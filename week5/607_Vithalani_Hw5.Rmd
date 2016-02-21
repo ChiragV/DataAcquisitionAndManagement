@@ -1,0 +1,98 @@
+---
+title: "607 Week 5 Assignment"
+author: "Chirag Vithalani"
+date: "February 20, 2016"
+output: html_document
+css: ./lab.css
+---
+
+<ul class="a">
+<li >
+<pre>
+In this project, you're given a text file with chess tournament results where the information has some structure. Your job is to create an R Markdown file that generates a .CSV file (that could for example be imported into a SQL database)with the following information for all of the players:
+
+Player's Name, Player's State, Total Number of Points, Player's Pre-Rating, and Average Pre Chess Rating of Opponents For the first player, the information would be:
+Gary Hua, ON, 6.0, 1794, 1605
+1605 was calculated by using the pre-tournament opponents' ratings of 1436, 1563, 1600, 1610, 1649, 1663, 1716, and
+dividing by the total number of games played.
+
+</pre>
+</li>
+</ul>
+
+<hr />
+
+<ul class="a">
+<li >
+
+Reading data from file
+
+```{r}
+library(stringr)
+
+#directly reading from 3rd line
+data <- read.csv("https://raw.githubusercontent.com/chirag-vithlani/607/master/week5/tournamentinfo.txt", skip=3)
+
+#flaten data
+flattenData<-unlist(data)
+
+```
+</li>
+</ul>
+
+<ul class="a">
+<li >
+
+Extract required data
+
+```{r}
+
+#get Player Names ->3 or more characters followed by space followed by 3 or more characters
+PlayerNames<-unlist(str_extract_all(flattenData, "[[:alpha:]]{3,}[:blank:][[:alpha:]]{1,}"))
+
+# getting state data
+stateData <- str_trim(unlist(str_extract_all(flattenData, " ON | MI | OH ")))
+
+#getting points
+points <- str_trim(unlist(str_extract_all(flattenData, "[:digit:][.][:digit:]")))
+
+# Player's Pre-rating
+# getting rating
+Pre_performanceRatingPrecededWithR<-str_extract_all(flattenData, "R: *[[:digit:] ]*")
+#removing "R"
+Pre_performanceRating <- str_replace_all(str_trim(unlist(Pre_performanceRatingPrecededWithR)), "R: ", "")
+```
+</li>
+</ul>
+
+<ul class="a">
+<li >
+Getting "average Pre Chess Rating of Opponents"
+
+```{r}
+
+#to get the opposite player numbers, first we need to get row which cotains this information
+rows_that_contains_opp_player_data=str_sub(flattenData, start = 48, end = 89)
+filtered_opp_player_rows<- rows_that_contains_opp_player_data[c(seq(1, length(flattenData), by = 3))]
+
+#Extract matching patterns from a string
+#filter the number which are either one digit or two digit
+opp_rating_String_raw_wise <- str_extract_all(filtered_opp_player_rows,"[[:digit:]]{1,2}")
+opp_rating_as_continuous_numeric <- as.numeric(unlist(opp_rating_String_raw_wise))
+
+#get opposition player rating using position
+opp_player_pre_rating <- as.numeric(Pre_performanceRating[opp_rating_as_continuous_numeric]) 
+#creates a matrix from the given set of values
+#the desired number of rows.
+#the desired number of columns.
+opp_rating_matrix <- matrix(opp_player_pre_rating, nrow=7, ncol=64)
+
+#na.rm=>logical. Should missing values (including NaN) be omitted from the calculations?
+#Form column sums 
+opp_rating_avg <- colMeans(opp_rating_matrix, na.rm=TRUE)
+
+# Data Frame
+data.frame(PlayerNames, stateData, points, Pre_performanceRating, opp_rating_avg)
+```
+</li>
+</ul>
