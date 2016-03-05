@@ -1,0 +1,154 @@
+---
+title: "607 Week 6 Assignment"
+author: "Chirag Vithalani"
+date: "March 4, 2016"
+output: html_document
+css: ./lab.css
+---
+
+<hr />
+
+<ul class="a">
+<li >
+
+GOAL 1: Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data. 
+
+</li>
+</ul>
+
+<ul class="b">
+<li>
+tidyr provides three main functions for tidying your messy data: gather(), separate() and spread().
+</li>
+</ul>
+
+<ul class="c">
+<li>
+Reading CSV file and printing data
+
+```{r}
+
+library(tidyr)
+flightData<-read.csv("https://raw.githubusercontent.com/chirag-vithlani/607/master/week6/week6.csv", header= TRUE,sep=",",na.strings = "?",stringsAsFactors=FALSE)
+flightData
+```
+</li>
+
+<li>
+Missing headers are names as X and X.1, so rename headers
+```{r}
+names(flightData)[names(flightData) == "X"] <- "Airline"
+names(flightData)[names(flightData) == "X.1"] <- "Arrival"
+
+```
+</li>
+
+<li>
+Repeating airline name where it is missing ( this is hard coded, but this step should be done programmatically )
+```{r}
+flightData[2, 1] <- "ALASKA"
+flightData[4, 1] <- "AM West"
+flightData
+
+```
+</li>
+<li>
+Using `gather()` function.
+`gather()` takes multiple columns, and gathers them into key-value pairs: it makes "wide" data longer.
+```{r}
+tidy <- gather(flightData, "City", "Count", 3:7) 
+head(tidy)
+```
+</li>
+
+<li>
+
+Using `spread()` function.
+`spread()` takes two columns (a key-value pair) and spreads them in to multiple columns, making "long" data wider
+
+```{r}
+
+#tidy$Count <- as.numeric(gsub(",", "", tidy$Count))
+tidy <- spread(tidy, "Arrival", Count)
+tidy
+
+
+```
+</li>
+</ul>
+
+<ul class="b">
+<li>
+
+dplyr implements the following verbs useful for data manipulation:
+<pre>
+select(): focus on a subset of variables
+filter(): focus on a subset of rows
+mutate(): add new columns
+summarise(): reduce each group to a smaller number of summary statistics
+arrange(): re-order the rows
+</pre>
+
+</li>
+</ul>
+
+<ul class="c">
+
+Choosing columns: select
+```{r}
+suppressMessages(library(dplyr))
+head(select(tidy, Airline))
+```
+or use minus to hide that column
+```{r}
+head(select(tidy, -Airline))
+```
+</li>
+
+<li>
+Using filter
+
+```{r}
+filter(tidy,Delayed==62)
+```
+</li>
+
+
+<li>
+Using mutate : Add new variables
+
+```{r}
+tidy=mutate(tidy,Total = Delayed + `On Time`)
+head(tidy)
+```
+</li>
+
+<li>
+Using summarise : Reduce variables to values
+
+```{r}
+tidy <- mutate(tidy, Total = Delayed + `On Time`, PercentDelayed = Delayed / Total * 100)
+tidy <- arrange(tidy, City, PercentDelayed)
+tidy
+```
+</li>
+</ul>
+<ul class="a">
+<li>
+GOAL 2: Perform analysis to compare the arrival delays for the two airlines.
+</li>
+
+</ul>
+
+
+<ul class="c">
+<li>
+
+ As we can see Alaska airline is delayed by 11% and AM West delayed by 18%.
+
+```{r}
+delays <- tidy %>% group_by(Airline) %>% summarise(MeanPercent = round(mean(PercentDelayed), 0))
+delays
+```
+</li>
+</ul>
