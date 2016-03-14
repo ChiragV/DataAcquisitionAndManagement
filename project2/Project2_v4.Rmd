@@ -1,0 +1,269 @@
+---
+title: "Data Acquisition and Management  - Project 2"
+author: "Chirag Vithalani"
+date: "March 12, 2016"
+output: 
+  html_document: 
+    highlight: pygments
+    theme: cerulean
+    toc: false
+    number_sections: false
+---
+
+## Fun with world bank data {.tabset .tabset-fade .tabset-pills}
+
+
+#### Here goal is to read "wide" datasets and and use tidyr and dplyr as needed to tidy and transform data.
+<hr />
+### Data set 1 : World Population 
+<hr />
+
+ 
+
+```{r echo=FALSE,message=FALSE}
+
+
+suppressWarnings(library(tidyr))  # for transformation
+suppressWarnings(library(ggplot2)) #to draw graphs
+
+
+```
+####Step 1 : Reading data file
+
+```{r  message=FALSE}
+world_population<-read.csv("https://raw.githubusercontent.com/chirag-vithlani/607/master/project2/world_populationOnlyCountry.csv", header= TRUE,sep=",",na.strings = "?",stringsAsFactors=FALSE)
+
+```
+
+####Step 2 : Selecting only required columns using `dplyr`'s select() function
+i.e. selecting only year last 30 years of data ( with gap of 10 years )
+
+```{r  message=FALSE}
+
+library(dplyr)
+# World population subset
+wp_subset<- select(world_population,Country.Name,Country.Code,X1993,X2003,X2013)
+head(wp_subset,1)
+#other way to achieve same thing
+#wp_subset<-subset(world_population, select=c("Country.Name","X1993","X2003","X2013"))
+
+```
+#### Step 3 : Rename columns using `rename()` function of plyr
+
+```{r message=FALSE}
+
+suppressWarnings(detach("package:dplyr", unload=TRUE)) # this is required step as dplyr and plyr doesn't work togather
+
+# Getting reuired world population data
+suppressWarnings(library(plyr))
+wp<-rename(wp_subset, c("Country.Name"="country","Country.Code"="code","X1993"="1993", "X2003"="2003","X2013"="2013"))
+
+head(wp,1)
+
+```
+
+#### Step 4 : Using `gather()` function to get data year wise.
+
+Putting 'year' information in rows
+
+```{r message=FALSE}
+suppressWarnings(library(dplyr)) #dplyr is a powerful R-package to transform and summarize tabular data with rows and columns.
+
+# gather() makes wide data longer (here we are removing 3rd to 5th column)
+wp_year_wise<-gather(wp, "Year", "Count", 3:5)
+
+head(wp_year_wise,1)
+
+```
+#### Step 5 : Remove rows which doesn't contain data using `filter` function.
+
+```{r message=FALSE}
+
+suppressWarnings(library(plotly))
+
+#wp_subset$percent<-round((wp_subset$X2013/total_wp13)*100,2)
+wp_year_wise <- wp_year_wise %>% filter(!is.na(wp_year_wise$Count))
+
+```
+#### Step 6 : Now we need to get percentage of country population with resect to world.
+
+This is bit complex step,
+although formula is simple, just divide country population with total world population, but we need to find this total population with respect to ( in that particular ) year.
+
+First finding total population in ( that !! ) year.
+
+we do this by using functions `mutate()`, `sum()` and `group_by()`
+
+<i>(Note : There was row in source data for 'world` too (that would make life easier) , but I choose to remove it and kept only country specific data.)</i>
+
+```{r message=FALSE}
+wp_year_wise<- wp_year_wise %>% 
+    group_by(Year) %>% 
+    mutate(Total_Population=sum(as.numeric(Count)))
+
+#just to see what data generated (after above step)
+subset( wp_year_wise, wp_year_wise$code=='USA')
+```
+#### Step 7 : Now calculating percentage population.
+
+```{r}
+
+wp_year_wise$percent<-round((wp_year_wise$Count/wp_year_wise$Total_Population)*100,4)
+#save(wp_year_wise, file="mydata.RData")
+
+```
+#### Step 8 : Now is the time for fun ;)
+
+We all know China and India are most populous countries,but how much with respect to world population.
+
+```{r message=FALSE}
+
+Population_India_China_2013<-subset(wp_year_wise,wp_year_wise$Year==2013 & (wp_year_wise$code=='IND' | wp_year_wise$code=='CHN'))
+
+India_China_2013_Sum_percent<-sum(Population_India_China_2013$percent)
+
+dataset<-data.frame(labels = c(" India + China "," Rest"),values = c(India_China_2013_Sum_percent,100-India_China_2013_Sum_percent))
+
+plot_ly(dataset, labels = labels, values = values, type = "pie") %>% 
+    layout(title = "China + India Poulation v/s Rest Of Wolrd")
+
+
+```
+
+
+
+#### Step 8 : Now choosing US,China & India specific data.
+
+```{r message=FALSE}
+
+#library(sqldf)
+wpUCI<-subset(wp_year_wise,wp_year_wise$country=='India' | wp_year_wise$country=='China' |  wp_year_wise$country=='United States')
+head(wpUCI,1)
+
+```
+#### Last Step : Conclusion with bubble plot
+##### As we can see in below plot, how countries population changed over time. 
+##### And this also shows relative population of country with respect to 
+##### world population ( when we mouse hover on bubble, and color of bubble )
+##### popluation of other coutries ( by observing the size of bubble )
+
+
+```{r message=FALSE}
+plot_ly(wpUCI, x = Year, y = code, size = percent,color = percent,opacity = percent, mode = "markers")
+
+
+
+```
+
+US population is comparatively small, we always knew this, but this gives nice relative insight.Like initially China was leading, but now India is caching up. US population hasn't changed much ( with respect to world ) as color of bubble doesn't change with time.
+
+
+
+<hr />
+###Data set 2 : World Forests 
+##### This dataset is almost similar to population one, so doing almost same operations here,  but plotting it differently.
+<hr />
+
+#### Step 1 : Read forests data.
+```{r message=FALSE}
+world_forests<-read.csv("https://raw.githubusercontent.com/chirag-vithlani/607/master/project2/forests.csv", header= TRUE,sep=",",na.strings = "?",stringsAsFactors=FALSE)
+
+```
+
+#### Step 2 : Selecting only required columns using `dplyr`'s select() function
+i.e. selecting only year last 30 years of data ( with gap of 10 years )
+
+```{r message=FALSE}
+wf_subset<-subset(world_forests, select=c("Country.Name","Country.Code","X1993","X2003","X2013"))
+head(wf_subset)
+
+#need to detach dplyr as plyr and dplyr both doesn't work 
+detach("package:dplyr", unload=TRUE)
+
+```
+#### Step 3 : Rename the columns
+
+```{r message=FALSE}
+suppressWarnings(library(plyr))
+wf<-rename(wf_subset, c("Country.Name"="country","Country.Code"="code","X1993"="1993", "X2003"="2003","X2013"="2013"))
+head(wf,1)
+
+library(dplyr)
+
+wf_year_wise<-gather(wf, "Year", "Count", 3:5)
+head(wf_year_wise,1)
+wf <- wf_year_wise %>% filter(!is.na(wf_year_wise$Count))
+head(wf,1)
+
+
+```
+
+
+#### Step 4 : Now what we need is "Total Forest Area of world-in that particular year". Using `mutate()` and `group_by()` to achieve this.
+
+```{r message=FALSE}
+
+wf<- wf %>% 
+    group_by(Year) %>% 
+    mutate(Total_Forest_Area=sum(as.numeric(Count)))
+
+```
+
+#### Step 5 : Calculating percentage of forest land with respect to total forest land in world - in that particular year.
+
+```{r message=FALSE}
+
+wf$percent<-round((wf$Count/wf$Total_Forest_Area)*100,4)
+
+```
+
+####Plotting on world map
+
+```{r}
+#df <- read.csv('https://raw.githubusercontent.com/plotly/datasets/master/2014_world_gdp_with_codes.csv')
+l <- list(color = toRGB("grey"), width = 0.5)
+g <- list(
+  showframe = FALSE,
+  showcoastlines = FALSE,
+  projection = list(type = 'Mercator')
+)
+
+plot_ly(wf, z = Count, text = code, locations = code, type = 'choropleth',        color = Count, colors = 'Greens', marker = list(line = l),colorbar = list(ticksuffix = '%', title = 'Forests Color Map')) %>% layout(title = 'Forests',geo = g)
+
+```
+
+I didn't know Finaland has huge forestry.
+
+### Merging two data sets 
+#####( not very useful info, but shows use of functions )
+
+
+Three columns are common among two datasets ( world population & forest )
+
+```{r message=FALSE}
+
+Population_And_Forests<-merge(wf,wp_year_wise,by=c("country","code","Year"))
+head(Population_And_Forests,1)
+
+```
+####Forest land with respect to population -- i.e forest land percentage per person by country
+
+```{r message=FALSE}
+
+options(scipen = 999)
+Population_And_Forests$forests_by_population<-round(((Population_And_Forests$Total_Forest_Area/Population_And_Forests$Total_Population)*100),8)
+
+
+
+```
+####Using `arrage()` function to sort.
+
+```{r message=FALSE}
+
+head(Population_And_Forests)
+sorted<-arrange(Population_And_Forests,-forests_by_population)
+head(sorted)
+subset(sorted,select=c("country","forests_by_population"),sorted$code=="IND"|sorted$code=="USA"|sorted$code=="CHN")
+
+```
+
