@@ -234,8 +234,9 @@ plot_ly(wf, z = Count, text = code, locations = code, type = 'choropleth',      
 
 I didn't know Finaland has huge forestry.
 
-### Merging two data sets 
-#####( not very useful info, but shows use of functions )
+### Data set 3 : (merging)
+
+#####( only shows use of functions )
 
 
 Three columns are common among two datasets ( world population & forest )
