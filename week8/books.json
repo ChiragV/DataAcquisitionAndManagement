@@ -1,0 +1,24 @@
+{
+  "books": {
+    "book": [
+      {
+        "name": "In Defense of Food: An Eater's Manifesto",
+        "author": "Michael Pollan",
+        "genres": "Non-fiction",
+        "price": "$9.30"
+      },
+      {
+        "name": "Quiet: The Power of Introverts in a World That Can't Stop Talking",
+        "author": "Susan Cain",
+        "genres": "Non-fiction",
+        "price": "$9.07"
+      },
+      {
+        "name": "For the Love of Physics",
+        "author": "Walter Lewin, Warren Goldstein",
+        "genres": "science",
+        "price": "$13.53"
+      }
+    ]
+  }
+}

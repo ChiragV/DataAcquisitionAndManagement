@@ -1,0 +1,33 @@
+---
+title: "Week 8 - Data Acquisition and Management"
+author: "Chirag Vithalani"
+date: "March 19, 2016"
+output: html_document
+---
+
+<hr />
+
+###Read HTML
+```{r}
+suppressWarnings(library(XML))
+htmldoc<-readHTMLTable('books.html',skip.rows = 1,as.data.frame = TRUE)
+htmlDF<-htmldoc[[1]]
+htmlDF
+```
+###Read XML
+
+```{r}
+xmldoc<-xmlParse("books.xml")
+xmlDF<-xmlToDataFrame(xmldoc)
+xmlDF
+
+```
+
+### Read JSON
+```{r}
+#install.packages("jsonlite")
+suppressWarnings(library(jsonlite))
+jsondoc<-fromJSON(txt="books.json")
+jsonDF<-data.frame(jsondoc[[1]])
+jsonDF
+```
