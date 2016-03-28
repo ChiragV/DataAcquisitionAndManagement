@@ -1,0 +1,102 @@
+---
+title: "Search <img src='https://a1.nyt.com/assets/homepage/20160317-173827/images/foundation/logos/nyt-logo-379x64.png'  />  (nytimes.com) with R"
+author: "Chirag Vithalani"
+date: "March 27, 2016"
+output:
+  html_document:
+      toc: true
+      number_sections: true
+---
+
+<hr style="border-top: 3px double #357FAA"/>
+
+#Load libraries
+
+```{r}
+suppressWarnings(library(jsonlite))
+suppressWarnings(library(XML))
+```
+
+# Overriding "+".
+(Since I am from Java background) overriding "+", so we can use it for string concatenation.
+```{r}
+
+"+" = function(x,y) 
+{
+    if(is.character(x) || is.character(y)) 
+    {
+        return(paste(x , y, sep=""))
+    } 
+    else 
+    {
+        .Primitive("+")(x,y)
+    }
+}
+
+```
+
+# Writing global variable.
+Get your key from http://developer.nytimes.com/docs and assign your key to variable article_key.
+
+```{r echo=FALSE}
+article_key <- {your-API-KEY}
+```
+```{r eval=FALSE}
+article_key <- {your-API-key}
+```
+
+# Writing reusable search function.
+Writing reusable function to serach most popular function on nytimes.com.
+if you need to debug quickly then paste below URL in browser
+http://api.nytimes.com/svc/mostpopular/v2/mostemailed/all-sections/1.json?api-key={your-API-KEY}
+
+```{r}
+
+
+#http://api.nytimes.com/svc/mostpopular/v2/mostemailed/all-sections/30.json?api-key={your-api-key}
+
+#resource_type =>mostemailed | mostshared | mostviewed
+#time_period=>Number of days:1 | 7 | 30,Corresponds to a day, a week or a month
+
+searchNY_Most_Popular_Article <- function(resource_type,time_period,format)
+{
+
+  #Pending - validate each argument variable
+  
+  baseURL<-"http://api.nytimes.com/svc/mostpopular/v2/"
+  
+  URL <- baseURL+resource_type+"/all-sections/"+time_period+"."+format+"?api-key="+article_key
+ 
+  if(format=='json')
+  {
+    req <- fromJSON(URL)
+    return (req$results)
+  }
+  else
+  {
+    xmldoc<-xmlParse(URL)
+    return (xmldoc)
+  }
+
+}
+
+
+```
+
+#Do search
+
+```{r}
+xmldoc<-searchNY_Most_Popular_Article('mostemailed',1,'xml') ##XML search
+jsondoc<-searchNY_Most_Popular_Article('mostemailed',1,'json') ##json search
+colnames(jsondoc)
+jsondocDF<-data.frame(jsondoc)
+mostpopular<-head(jsondocDF,1)
+mostpopular$title
+mostpopular$abstract
+
+```
+
+<a href='`r mostpopular$url`'> Read full article </a>
+<br />
+
+<hr />
