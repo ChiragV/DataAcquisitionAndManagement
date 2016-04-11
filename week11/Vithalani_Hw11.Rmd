@@ -1,0 +1,193 @@
+---
+title: "Email Classification ( Spam or Not Spam ) "
+author: "Chirag Vithalani"
+date: "April 9, 2016"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+<hr />
+
+## Load libraries
+
+```{r message=FALSE}
+suppressWarnings(library(tm))
+suppressWarnings(library(RTextTools))
+
+
+```
+## Download
+
+I have downloaded emails from <a href="https://spamassassin.apache.org/publiccorpus/" >here</a> and unzipped <b>twice</b> using 7-zip.
+
+## Prepare to read e-mail files.
+
+```{r message=FALSE}
+#list.files -- List the Files in a Directory/Folder
+#list.files("easy_ham") #List the Files in a "easy_ham" Directory/Folder
+#list.files("spam") #List the Files in a "spam" Directory/Folder
+
+#making it like easy_ham/2542.1a940f58e68fa8a84a3f83e30a624e8d
+easy_ham_files <- paste0("easy_ham/", list.files("easy_ham")) 
+spam_files <- paste0("spam/", list.files("spam")) 
+hard_ham_files <- paste0("hard_ham/", list.files("hard_ham")) 
+
+#just to see how this is orgnized
+head(easy_ham_files,2)
+
+```
+
+
+## Write function to read email files.
+
+```{r message=FALSE}
+
+read_emails <- function(x) {
+  paste(readLines(x), collapse=" ")
+}
+
+```
+
+## Read emails
+
+```{r message=FALSE}
+#easy_ham_files => contains filename
+#easy_ham_corp=> contains full email text
+
+easy_ham_corp <- unlist(lapply(easy_ham_files, read_emails))
+spam_corp <- unlist(lapply(spam_files, read_emails))
+hard_ham_corp <- unlist(lapply(hard_ham_files, read_emails))
+
+```
+## Store in dataframe
+
+```{r message=FALSE}
+easy_ham_frame <- data.frame(text=easy_ham_corp)
+spam_frame <- data.frame(text=spam_corp)
+hard_ham_frame<-data.frame(text=hard_ham_corp)
+```
+## Save original classification
+Storing actual email classification ( so we can compare later).
+0 is span, 1 is not spam
+
+```{r message=FALSE}
+easy_ham_frame$outcome <- 1
+spam_frame$outcome  <- 0
+hard_ham_frame$outcome  <- 1
+```
+## <font style="color:blue;">M</font><font style="color:red;">i</font><font style="color:green;">x</font> them up
+<b>Look at below statements closely</b> ( we will need to revisit them again ).
+Here we are learning from easy data frame, and will validate it against hard emails frame data.
+
+```{r message=FALSE}
+classified_emails <- rbind(easy_ham_frame, spam_frame) # these records are training data
+emails <- rbind(classified_emails,hard_ham_frame) # training data + test data ( data to be validated )
+
+```
+## Cleanup
+
+```{r message=FALSE}
+emails$text <- iconv(emails$text, to="UTF-8")
+emails$text <- lapply(emails$text, tolower)
+emails$text <- lapply(emails$text, removePunctuation)
+emails$text <- lapply(emails$text, removeWords, stopwords("english"))
+emails$text <- lapply(emails$text, stemDocument)
+emails$text <- unlist(emails$text)
+```
+## The Corpus
+Make corpus and matix
+
+```{r message=FALSE}
+#A vector source interprets each element of the vector x as a document.
+email_corp <- Corpus(VectorSource(emails$text))
+document_term_matrix <- DocumentTermMatrix(email_corp)
+```
+
+## Sacrifice somewords
+Sparsity refers to the threshold of relative document frequency for a term, above which the term will be removed.
+Still confused ? ( like I was ), then read simple explanation <a href="http://stackoverflow.com/questions/28763389/how-does-the-removesparseterms-in-r-work">here</a>.
+
+Here we are doing 97%, so in this case probably --almost -- all terms will be retained.
+
+```{r message=FALSE}
+document_term_matrix <- removeSparseTerms(document_term_matrix, 0.97)
+#as.matrix(document_term_matrix)
+
+
+# When the virgin flag is set to FALSE, it indicates that all data in the training and testing sets have corresponding labels.
+# 
+# When the virgin flag is set to TRUE, it indicates that the testing set is unclassified data with no known true values.
+
+#document_term_matrix <- rbind(document_term_matrix, hard_ham_frame)
+classfiedThresold<-nrow(classified_emails)
+
+```
+## Actual work
+Create container and do actual classification work.
+```{r message=FALSE}
+
+container <-create_container(document_term_matrix,trainSize=1:classfiedThresold,testSize=((classfiedThresold+1):nrow(emails)),labels=emails$outcome,virgin=FALSE)
+
+
+tree_trainer <- train_model(container, "TREE")
+tree_output <- classify_model(container, tree_trainer)
+
+
+model_performance <- data.frame(
+                        correct_label = emails$outcome[((classfiedThresold+1):nrow(emails))],
+                       
+                        tree = as.character(tree_output[,1]),
+                        
+                        stringsAsFactors = FALSE)
+```
+### Result
+
+```{r message=FALSE}
+
+prop.table(table(model_performance$correct_label == model_performance$tree))
+
+```
+## Re-check
+Why result was so bad ? where things went wrong ?
+If we check in "Mix them up" section, we did set easy frame as our training data.
+So basically, we trained our model easy way and put it into practice with hard data.
+As someone said "The more you sweat in training, the less you bleed in war".
+If we do other way around i.e. putting training data with hard way and then validate it with easy emails then result  is different.
+
+```{r message=FALSE}
+classified_emails <- rbind(hard_ham_frame, spam_frame)
+emailsnew <- rbind(classified_emails,easy_ham_frame)
+
+emailsnew$text <- iconv(emailsnew$text, to="UTF-8")
+emailsnew$text <- lapply(emailsnew$text, tolower)
+emailsnew$text <- lapply(emailsnew$text, removePunctuation)
+emailsnew$text <- lapply(emailsnew$text, removeWords, stopwords("english"))
+emailsnew$text <- lapply(emailsnew$text, stemDocument)
+emailsnew$text <- unlist(emailsnew$text)
+
+email_corp <- Corpus(VectorSource(emailsnew$text))
+document_term_matrix <- DocumentTermMatrix(email_corp)
+
+document_term_matrix <- removeSparseTerms(document_term_matrix, 0.97)
+
+classfiedNewThresold<-nrow(classified_emails)
+
+container <-create_container(document_term_matrix,trainSize=1:classfiedNewThresold,testSize=((classfiedNewThresold+1):nrow(emailsnew)),labels=emailsnew$outcome,virgin=FALSE)
+
+
+tree_trainer <- train_model(container, "TREE")
+tree_output <- classify_model(container, tree_trainer)
+
+
+model_performance <- data.frame(
+                        correct_label = emailsnew$outcome[((classfiedNewThresold+1):nrow(emailsnew))],
+                       
+                        tree = as.character(tree_output[,1]),
+                        
+                        stringsAsFactors = FALSE)
+prop.table(table(model_performance$correct_label == model_performance$tree))
+
+```
+
