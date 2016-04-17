@@ -1,0 +1,119 @@
+---
+title: "Project 4 - SQL to NoSQL migration"
+author: "Chirag Vithalani"
+date: "April 11, 2016"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+<font size="5">Task : Take information from a relational database and migrate it to a NoSQL database</font>
+
+<hr style="border: 2px solid #357FAA;"/>
+
+## SQL v/s NoSQL database mapping
+<img src="https://raw.githubusercontent.com/chirag-vithlani/607/master/project4/Relational-NOSQL-Mapping.png" />
+
+## Write data to relational database
+
+```{r echo=FALSE}
+passsword<-"Master31"
+```
+###Step 1: Connect to database
+
+```{r message=FALSE}
+suppressWarnings(library(RMySQL))
+mydb = dbConnect(MySQL(), user='root', password=passsword, dbname='tb', host='localhost')
+```
+
+###Step 2: Create table query
+
+<pre>
+CREATE TABLE 'posts' 
+(
+'id' int(11) NOT NULL AUTO_INCREMENT,
+'post_text' varchar(500) NOT NULL,
+'user_name' varchar(20) NOT NULL,
+'post_privacy' varchar(10) NOT NULL,
+'post_likes_count' int(11) NOT NULL,
+ PRIMARY KEY ('id')
+)
+</pre>
+
+If we want do this in MongoDB directly, we can use below query
+<pre>
+db.createCollection("posts")
+</pre>
+###Step 3: Insert data using query
+<pre>
+INSERT INTO 'posts' ('id' ,'post_text' ,'user_name' ,'post_privacy' ,'post_likes_count')VALUES (NULL ,  'This is a sample post',  'mark',  'public',  '0');
+</pre>
+
+If we want to do insert to MongoDB directly, we can use below query
+<pre>
+db.posts.insert({user_name:"mark", post_text:"This is a sample post", post_privacy:"public", post_likes_count:0})
+</pre>
+## Read data from relational database
+
+
+```{r message=FALSE}
+
+rs = dbSendQuery(mydb, "select * from posts")
+data = fetch(rs, n=-1)
+data
+
+```
+If we want to select/read from MongoDB directly, we can use below query
+<pre>
+db.posts.find()
+</pre>
+
+## Create MongoDB Collection 
+( i.e. similar to table in relational database )
+
+```{r message=FALSE}
+suppressWarnings(library(RMongo))
+suppressWarnings(library(rmongodb))
+collection<-"MyCollection"
+mongo = mongo.create(host = "localhost")
+mongo <- mongo.create()
+mongo.get.database.collections(mongo , collection)
+```
+## Write data to MongoDB
+
+### Step 1: Convert to JSON and then to bson
+```{r message=FALSE}
+suppressWarnings(library(jsonlite))
+jsonObj<-toJSON(unname(split(data, 1:nrow(data))))
+jsonObj
+bsonObj <- mongo.bson.from.JSON(jsonObj)
+```
+
+### Step 2 : Write to MongoDB read.
+
+```{r message=FALSE}
+if(mongo.is.connected(mongo) == TRUE) {
+  icoll <- paste(collection, "posts", sep=".")
+  mongo.insert.batch(mongo, icoll, list(bsonObj) )
+
+  dbs <- mongo.get.database.collections(mongo, collection)
+  
+  mongo.find.all(mongo, icoll)
+}
+```
+
+#### Advantages of relational databases
++ Good choice for applications that involve the management of several transactions.
++ The structure of a relational database allows us to link information from different tables using foreign keys.
++ Maintains ACID properties (the set of properties that guarantee database transactions are processed reliably) important for relibility.
++ So many people knows SQL.
+
+#### Advantages of non-relational databases
++ Lightweight data interchange format.
++ if you find yourself having to de-normalize your database schema, non-relational databases like Mongo may be the best way to go.
++ Database is not at risk for SQL injection attacks.
++ Sharding distributes the data across partitions to overcome hardware limitations.
+
+#### Disadvantages of non-relational databases
++ Since there are no joins like there would be in relational databases, we need to perform multiple queries and join the data manually within our code -- and that can get very ugly, very fast.
++ Mongo doesn't automatically treat operations as transactions the way a relational database does, we must manually choose to create a transaction and then manually verify it, manually commit it or roll it back. To put it simply, some operations will succeed while others fail.
