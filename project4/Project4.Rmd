@@ -81,7 +81,7 @@ mongo.get.database.collections(mongo , collection)
 ```
 ## Write data to MongoDB
 
-### Step 1: Convert to JSON and then to bson
+### Convert to JSON and then to bson
 ```{r message=FALSE}
 suppressWarnings(library(jsonlite))
 jsonObj<-toJSON(unname(split(data, 1:nrow(data))))
@@ -89,17 +89,34 @@ jsonObj
 bsonObj <- mongo.bson.from.JSON(jsonObj)
 ```
 
-### Step 2 : Write to MongoDB read.
+### Write to MongoDB read.
 
 ```{r message=FALSE}
+
+#prepare new record to insert
+
+data2<-mongo.bson.from.JSON("{ \"post_text\":\"This is a sample post2\" , \"user_name2\": \"mark2\", \"post_privacy\": \"public\", \"post_likes_count\": 0 }")
+
+
+
+data2
 if(mongo.is.connected(mongo) == TRUE) {
   icoll <- paste(collection, "posts", sep=".")
-  mongo.insert.batch(mongo, icoll, list(bsonObj) )
+  mongo.insert.batch(mongo, icoll, list(bsonObj,data2) )
 
   dbs <- mongo.get.database.collections(mongo, collection)
+  pop<-mongo.find.all(mongo, icoll)
+  unlist(pop)
   
-  mongo.find.all(mongo, icoll)
+  
 }
+
+
+```
+## Close the connection
+
+```{r}
+mongo.destroy(mongo)
 ```
 
 #### Advantages of relational databases
