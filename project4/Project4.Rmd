@@ -23,7 +23,7 @@ output:
 ## Write data to relational database
 
 ```{r echo=FALSE}
-passsword<-"Master31"
+passsword<-"password"
 ```
 ###Step 1: Connect to database
 
@@ -124,6 +124,7 @@ if(mongo.is.connected(mongo) == TRUE) {
 ```{r}
 mongo.destroy(mongo)
 ```
+## SQL V/s NoSQL
 
 #### Advantages of relational databases
 + Good choice for applications that involve the management of several transactions.
@@ -140,3 +141,7 @@ mongo.destroy(mongo)
 #### Disadvantages of non-relational databases
 + Since there are no joins like there would be in relational databases, we need to perform multiple queries and join the data manually within our code -- and that can get very ugly, very fast.
 + Mongo doesn't automatically treat operations as transactions the way a relational database does, we must manually choose to create a transaction and then manually verify it, manually commit it or roll it back. To put it simply, some operations will succeed while others fail.
+
+#### Features comparison
+
+<img src="https://raw.githubusercontent.com/chirag-vithlani/607/master/project4/SQL-NOSQL%20Comparision.png" />
