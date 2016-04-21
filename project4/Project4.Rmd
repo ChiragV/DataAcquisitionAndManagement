@@ -23,7 +23,7 @@ output:
 ## Write data to relational database
 
 ```{r echo=FALSE}
-passsword<-"password"
+passsword<-"Password"
 ```
 ###Step 1: Connect to database
 
@@ -145,3 +145,11 @@ mongo.destroy(mongo)
 #### Features comparison
 
 <img src="https://raw.githubusercontent.com/chirag-vithlani/607/master/project4/SQL-NOSQL%20Comparision.png" />
+
+## Conclusion
+We did see how to get data from relational database and insert same object to MongoDB.
+But in real life it is not that easy. It is easy to use MongoDB directly but to migrate from relational database to MongoDB requires proper planning and testing.Below are few links related to subject.
+
+* Great guide from Amazon : <a href="https://s3.amazonaws.com/info-mongodb-com/RDBMStoMongoDBMigration.pdf" target="_blank">RDBMS to MongoDB Migration Guide</a>
+* Slide share : <a href="http://www.slideshare.net/matkeep/migrating-from-relational-databases-to-mongodb" target="_blank">Migrating from Relational Databases to MongoDB</a>
+* StackOverflow question : <a href="http://stackoverflow.com/questions/17204182/how-can-i-migrate-a-relational-database-for-nosql" target="_blank">How can I migrate a relational database for nosql?</a>
